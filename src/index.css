@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #2C5222;
+  --color-brand-dark: #1E3A17;
+  --color-brand-deep: #14260F;
+  --color-accent: #E8842C;
+  --color-accent-light: #F8A94F;
+  --color-ink: #1C2417;
+  --color-paper: #FAF8F2;
+  --font-display: "Noto Serif Bengali", "Hind Siliguri", ui-serif, serif;
+  --font-body: "Hind Siliguri", ui-sans-serif, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-brand);
+  color: #fff;
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+.animate-bounce-soft {
+  animation: bounce-soft 1.8s ease-in-out infinite;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-bounce-soft { animation: none; }
+}
