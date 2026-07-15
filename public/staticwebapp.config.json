@@ -1,7 +1,7 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/img/*", "/favicon.svg", "/*.{css,js,map,json,png,webp,svg,ico,txt}"]
+    "exclude": ["/img/*", "/favicon.svg", "/*.{css,js,map,json,png,webp,svg,ico,txt,xml}"]
   },
   "mimeTypes": {
     ".webp": "image/webp"

@@ -1,21 +1,31 @@
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion'
 import { useT } from '../i18n.jsx'
 
 export default function Hero() {
   const t = useT()
   const reduce = useReducedMotion()
+  const { scrollY } = useScroll()
+  const yBg = useTransform(scrollY, [0, 700], [0, reduce ? 0 : 160])
+  const scaleBg = useTransform(scrollY, [0, 700], [1, reduce ? 1 : 1.1])
+  const yContent = useTransform(scrollY, [0, 550], [0, reduce ? 0 : -60])
+  const fadeContent = useTransform(scrollY, [0, 500], [1, reduce ? 1 : 0.12])
 
   return (
     <section id="top" className="relative flex min-h-svh items-center overflow-hidden bg-brand-deep">
-      <img
-        src="/img/hero-clean.webp"
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover object-[70%_center]"
-      />
+      <motion.div className="absolute inset-0" style={{ y: yBg, scale: scaleBg }}>
+        <img
+          src="/img/hero-clean.webp"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover object-[70%_center]"
+        />
+      </motion.div>
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-transparent" />
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-28 pb-16 sm:px-6">
+      <motion.div
+        className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-28 pb-16 sm:px-6"
+        style={{ y: yContent, opacity: fadeContent }}
+      >
         <motion.img
           initial={reduce ? false : { opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -79,7 +89,7 @@ export default function Hero() {
           </svg>
           {t('পাওয়া যাচ্ছে দেশজুড়ে — সব বিভাগে কুরিয়ার ডেলিভারি', 'Available nationwide — courier delivery to every division')}
         </motion.p>
-      </div>
+      </motion.div>
 
       <div className="absolute bottom-5 left-1/2 z-10 hidden -translate-x-1/2 sm:block" aria-hidden="true">
         <svg className="animate-bounce-soft h-7 w-7 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

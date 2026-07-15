@@ -1,9 +1,11 @@
 import { useRef } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import Reveal from './Reveal.jsx'
 import { useT } from '../i18n.jsx'
 
 export default function Gallery() {
   const t = useT()
+  const reduce = useReducedMotion()
   const track = useRef(null)
 
   const shots = [
@@ -55,16 +57,25 @@ export default function Gallery() {
           ref={track}
           className="no-scrollbar mt-10 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2"
         >
-          {shots.map(([img, caption]) => (
-            <figure key={img} className="w-72 shrink-0 snap-start sm:w-80">
-              <img
-                src={`/img/${img}`}
-                alt={caption}
-                className="h-96 w-full rounded-2xl object-cover shadow-md"
-                loading="lazy"
-              />
+          {shots.map(([img, caption], i) => (
+            <motion.figure
+              key={img}
+              initial={reduce ? false : { opacity: 0, y: 32, scale: 0.97 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.55, delay: (i % 4) * 0.07, ease: [0.22, 1, 0.36, 1] }}
+              className="w-72 shrink-0 snap-start sm:w-80"
+            >
+              <div className="group overflow-hidden rounded-2xl shadow-md">
+                <img
+                  src={`/img/${img}`}
+                  alt={caption}
+                  className="h-96 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
               <figcaption className="mt-2.5 text-sm font-semibold text-ink/55">{caption}</figcaption>
-            </figure>
+            </motion.figure>
           ))}
         </div>
       </div>
