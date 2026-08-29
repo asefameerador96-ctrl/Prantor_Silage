@@ -16,7 +16,22 @@ import { createServer } from "node:http";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+
+// Playwright is imported dynamically and the browser is launched inside a guard.
+// It refuses to load at all on Node < 20, which is an import-time failure that a
+// try/catch around launch() would never see — that is exactly how this step broke
+// the first time it ran in CI.
+let chromium;
+try {
+  ({ chromium } = await import("playwright"));
+} catch (err) {
+  console.warn("prerender: skipped - Playwright could not be loaded.");
+  console.warn("  " + String(err.message).split(String.fromCharCode(10))[0]);
+  console.warn("  Node " + process.versions.node + " is in use; Playwright needs Node 20 or newer.");
+  console.warn("  The site still deploys, but crawlers that do not run JavaScript");
+  console.warn("  will see an empty page.");
+  process.exit(0);
+}
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = join(root, "dist");

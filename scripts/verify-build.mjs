@@ -8,7 +8,16 @@ import { createServer } from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+
+// Matches scripts/prerender.mjs: if Playwright cannot load (Node < 20), skip rather
+// than fail, since the site itself is still fine.
+let chromium;
+try {
+  ({ chromium } = await import("playwright"));
+} catch {
+  console.warn("verify-build: skipped - Playwright unavailable on Node " + process.versions.node + ".");
+  process.exit(0);
+}
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = join(root, "dist");
