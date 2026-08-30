@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useLang, useT } from '../i18n.jsx'
 
 export default function Navbar() {
@@ -15,13 +16,22 @@ export default function Navbar() {
   }, [])
 
   const dark = scrolled || open
+  const { pathname } = useLocation()
+  const onHome = pathname === '/'
+
+  // Section links are in-page anchors on the homepage, but from a guide page they
+  // must navigate home first — "#product" alone would only append a fragment to
+  // the guide's own URL.
+  const section = (hash) => (onHome ? hash : `/${hash}`)
+
   const links = [
-    [t('আমাদের কথা', 'Our Story'), '#story'],
-    [t('উপকারিতা', 'Benefits'), '#benefits'],
-    [t('পণ্য', 'Product'), '#product'],
-    [t('গ্যালারি', 'Gallery'), '#gallery'],
-    [t('প্রাপ্তিস্থান', 'Availability'), '#availability'],
-    [t('যোগাযোগ', 'Contact'), '#contact'],
+    [t('আমাদের কথা', 'Our Story'), section('#story')],
+    [t('উপকারিতা', 'Benefits'), section('#benefits')],
+    [t('পণ্য', 'Product'), section('#product')],
+    [t('গ্যালারি', 'Gallery'), section('#gallery')],
+    [t('প্রাপ্তিস্থান', 'Availability'), section('#availability')],
+    [t('খামারির গাইড', 'Guide'), '/guide', true],
+    [t('যোগাযোগ', 'Contact'), section('#contact')],
   ]
 
   return (
@@ -31,13 +41,13 @@ export default function Navbar() {
       }`}
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        <a href="#top" className="flex items-center" aria-label="Prantor Silage">
+        <Link to="/" className="flex items-center" aria-label="Prantor Silage">
           <img
             src={dark ? '/img/logo-green.png' : '/img/logo-white.png'}
             alt={t('প্রান্তর সাইলেজ', 'Prantor Silage')}
             className="h-12 w-auto"
           />
-        </a>
+        </Link>
 
         <div className="hidden items-center gap-6 lg:flex">
           {links.map(([label, href]) => (
@@ -91,16 +101,19 @@ export default function Navbar() {
 
       {open && (
         <div className="border-t border-brand/10 bg-paper px-6 py-4 lg:hidden">
-          {links.map(([label, href]) => (
-            <a
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              className="block py-2.5 text-base font-semibold text-ink/80 hover:text-brand"
-            >
-              {label}
-            </a>
-          ))}
+          {links.map(([label, href, isRoute]) =>
+            isRoute ? (
+              <Link key={href} to={href} onClick={() => setOpen(false)}
+              className="block py-2.5 text-base font-semibold text-ink/80 hover:text-brand">
+                {label}
+              </Link>
+            ) : (
+              <a key={href} href={href} onClick={() => setOpen(false)}
+              className="block py-2.5 text-base font-semibold text-ink/80 hover:text-brand">
+                {label}
+              </a>
+            )
+          )}
           <a
             href="tel:+8801901244248"
             className="mt-3 block rounded-full bg-accent px-5 py-3 text-center text-sm font-bold text-white"

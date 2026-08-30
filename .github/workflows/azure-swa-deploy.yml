@@ -20,8 +20,18 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      # The build prerenders the page with headless Chromium so crawlers that do
+      # not run JavaScript get real content. Only Chromium is needed.
+      - name: Install Chromium for prerendering
+        run: npx playwright install --with-deps chromium
+
       - name: Build
         run: npm run build
+
+      # Fails the deploy if the built page errors, renders no text, or has a
+      # broken image.
+      - name: Verify built site
+        run: node scripts/verify-build.mjs
 
       - name: Deploy
         uses: Azure/static-web-apps-deploy@v1
