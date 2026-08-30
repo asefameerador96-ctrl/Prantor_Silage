@@ -53,7 +53,15 @@ export const ROUTE_META = {
   },
 }
 
-/** Emitted on every indexable page. */
+/**
+ * Emitted on every indexable page.
+ *
+ * Prantor Silage and AK Silage are separate brands with their own premises — this
+ * one at Mahigonj, AK at Paglapir — under the same parent company. They are
+ * deliberately NOT linked with sameAs: in schema.org that asserts the two URLs are
+ * the same entity, which would tell search engines these are one business. The
+ * shared parent is declared instead, which is what is actually true.
+ */
 export const ORGANIZATION_JSONLD = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
@@ -62,12 +70,16 @@ export const ORGANIZATION_JSONLD = {
   slogan: 'অবিরাম পুষ্টি, অফুরন্ত যোগান',
   url: SITE,
   description:
-    'Corn silage for cattle farmers in Bangladesh, produced by A.K. Heritage & Corporation in Paglapir, Rangpur.',
+    'Corn silage made from whole maize plants at milking stage, for cattle farmers in Bangladesh. Produced at Mahigonj, Rangpur.',
   address: {
     '@type': 'PostalAddress',
-    addressLocality: 'Paglapir',
+    addressLocality: 'Mahigonj',
     addressRegion: 'Rangpur',
     addressCountry: 'BD',
+  },
+  parentOrganization: {
+    '@type': 'Organization',
+    name: 'A.K. Heritage & Corporation',
   },
   contactPoint: {
     '@type': 'ContactPoint',
@@ -76,6 +88,4 @@ export const ORGANIZATION_JSONLD = {
     areaServed: 'BD',
     availableLanguage: ['bn', 'en'],
   },
-  // Declares the sister brand as a related entity rather than only linking to it.
-  sameAs: [SISTER_SITE.url],
 }
