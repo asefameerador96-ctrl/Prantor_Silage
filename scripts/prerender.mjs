@@ -93,6 +93,27 @@ try {
   await page.waitForTimeout(500);
 
   const html = await page.evaluate(() => {
+    // The hero video is attached on idle by the client precisely so it does not
+    // compete with first paint. By snapshot time that has already happened, so the
+    // source has to come back out of the static markup or the browser would start
+    // fetching 2.7 MB from the prerendered HTML before React takes over. The poster
+    // is what the static view should show.
+    for (const video of document.querySelectorAll("video")) {
+      video.removeAttribute("src");
+      video.setAttribute("preload", "none");
+    }
+
+    // Below-the-fold images: in the snapshot every section exists at once, and an
+    // <img> with no loading attribute is eager by default, so the gallery would be
+    // fetched up front rather than progressively as it was before prerendering.
+    const fold = window.innerHeight;
+    for (const img of document.images) {
+      if (img.getBoundingClientRect().top > fold && img.getAttribute("loading") !== "lazy") {
+        img.setAttribute("loading", "lazy");
+      }
+      if (!img.getAttribute("decoding")) img.setAttribute("decoding", "async");
+    }
+
     document.getElementById("root")?.setAttribute("data-prerendered", "true");
     return "<!doctype html>\n" + document.documentElement.outerHTML;
   });
