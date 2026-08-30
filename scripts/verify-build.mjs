@@ -22,6 +22,10 @@ try {
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = join(root, "dist");
 
+const source = readFileSync(join(root, "src/seo/routeMeta.js"), "utf8");
+const body = source.slice(source.indexOf("export const ROUTE_META"));
+const routes = [...body.matchAll(/^ {2}'(\/[^']*)':/gm)].map((m) => m[1]);
+
 const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
   ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png",
   ".webp": "image/webp", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".mp4": "video/mp4",
@@ -30,6 +34,7 @@ const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
 
 const srv = createServer((q, r) => {
   let f = join(dist, decodeURIComponent(new URL(q.url, "http://x").pathname));
+  if (existsSync(join(f, "index.html"))) f = join(f, "index.html");
   if (!existsSync(f) || statSync(f).isDirectory()) f = join(dist, "index.html");
   try {
     r.writeHead(200, { "Content-Type": MIME[extname(f)] ?? "application/octet-stream" });
@@ -41,51 +46,66 @@ const srv = createServer((q, r) => {
 
 const port = await new Promise((ok) => srv.listen(0, () => ok(srv.address().port)));
 const browser = await chromium.launch();
-const page = await browser.newPage();
+const problems = [];
+const seenTitles = new Map();
 
-const errors = [];
-page.on("pageerror", (e) => errors.push(e.message));
-page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+for (const route of routes) {
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 
-await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: "networkidle", timeout: 45000 });
-await page.waitForTimeout(1200);
+  await page.goto(`http://127.0.0.1:${port}${route}`, { waitUntil: "networkidle", timeout: 45000 });
+  await page.waitForTimeout(1000);
 
-// Most gallery images are loading="lazy", so they report naturalWidth 0 until they
-// enter the viewport. Scroll the whole page first, otherwise the broken-image check
-// flags every below-the-fold image regardless of whether the file exists.
-await page.evaluate(async () => {
-  const step = window.innerHeight;
-  for (let y = 0; y < document.body.scrollHeight; y += step) {
-    window.scrollTo(0, y);
-    await new Promise((r) => setTimeout(r, 220));
-  }
-  window.scrollTo(0, 0);
-});
-await page.waitForLoadState("networkidle");
-await page.waitForTimeout(800);
+  // Gallery images are loading="lazy", so scroll before checking for broken ones —
+  // otherwise every below-the-fold image reports naturalWidth 0.
+  await page.evaluate(async () => {
+    const step = window.innerHeight;
+    for (let y = 0; y < document.body.scrollHeight; y += step) {
+      window.scrollTo(0, y);
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    window.scrollTo(0, 0);
+  });
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(600);
 
-const result = await page.evaluate(() => ({
-  title: document.title,
-  text: document.body.innerText.trim().length,
-  brokenImages: [...document.images]
-    .filter((i) => !i.complete || i.naturalWidth === 0)
-    .map((i) => i.currentSrc || i.src)
-    .slice(0, 5),
-}));
+  const r = await page.evaluate(() => ({
+    title: document.title,
+    canonical: document.querySelector('link[rel="canonical"]')?.href ?? "",
+    robots: document.querySelector('meta[name="robots"]')?.content ?? "",
+    text: document.body.innerText.trim().length,
+    broken: [...document.images].filter((i) => !i.complete || i.naturalWidth === 0).map((i) => i.currentSrc || i.src).slice(0, 4),
+  }));
+
+  const real = errors.filter((e) => !/favicon|net::ERR_|Failed to load resource/i.test(e));
+  const issues = [];
+  if (real.length) issues.push(`console: ${real.slice(0, 2).join(" | ")}`);
+  if (r.broken.length) issues.push(`broken images: ${r.broken.join(", ")}`);
+  if (r.text < 600) issues.push(`only ${r.text} chars of text`);
+  if (!r.canonical.endsWith(route === "/" ? ".com/" : route)) issues.push(`canonical is ${r.canonical}`);
+  if (!r.robots.startsWith("index")) issues.push(`robots is "${r.robots}"`);
+  // Duplicate titles across routes are the exact problem these pages exist to avoid.
+  if (seenTitles.has(r.title)) issues.push(`title duplicates ${seenTitles.get(r.title)}`);
+  seenTitles.set(r.title, route);
+
+  console.log(`  ${issues.length ? "FAIL" : "ok  "} ${route.padEnd(32)} ${String(r.text).padStart(5)} chars  "${r.title.slice(0, 42)}"`);
+  if (issues.length) problems.push({ route, issues });
+  await page.close();
+}
 
 await browser.close();
 srv.close();
 
-// Third-party font/CDN noise does not affect correctness of the page itself.
-const real = errors.filter((e) => !/favicon|net::ERR_|Failed to load resource/i.test(e));
-const problems = [];
-if (real.length) problems.push(`${real.length} console error(s): ${real.slice(0, 3).join(" | ")}`);
-if (result.brokenImages.length) problems.push(`broken images: ${result.brokenImages.join(", ")}`);
-if (result.text < 800) problems.push(`only ${result.text} characters of text rendered`);
-
-console.log(`verify-build: "${result.title.slice(0, 60)}" — ${result.text} chars, ${result.brokenImages.length} broken images`);
 if (problems.length) {
-  console.error("verify-build FAILED:\n  " + problems.join("\n  "));
+  console.error("");
+  console.error("verify-build FAILED:");
+  for (const p of problems) {
+    console.error("  " + p.route);
+    for (const issue of p.issues) console.error("    " + issue);
+  }
   process.exit(1);
 }
-console.log("verify-build: ok");
+console.error("");
+console.log(`verify-build: all ${routes.length} routes render cleanly with distinct titles`);

@@ -1,35 +1,24 @@
-import Navbar from './components/Navbar.jsx'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import ScrollProgress from './components/ScrollProgress.jsx'
-import Hero from './components/Hero.jsx'
-import Story from './components/Story.jsx'
-import Benefits from './components/Benefits.jsx'
-import Quality from './components/Quality.jsx'
-import Product from './components/Product.jsx'
-import Gallery from './components/Gallery.jsx'
-import Availability from './components/Availability.jsx'
-import QuoteBand from './components/QuoteBand.jsx'
-import Faq from './components/Faq.jsx'
-import Contact from './components/Contact.jsx'
-import Footer from './components/Footer.jsx'
+import ScrollToTop from './components/ScrollToTop.jsx'
+import RouteSeo from './components/RouteSeo.jsx'
+import Home from './pages/Home.jsx'
+import GuideIndex from './pages/GuideIndex.jsx'
+import GuidePage from './pages/GuidePage.jsx'
+import NotFound from './pages/NotFound.jsx'
 
 export default function App() {
   return (
-    <>
+    <BrowserRouter>
       <ScrollProgress />
-      <Navbar />
-      <main>
-        <Hero />
-        <Story />
-        <Benefits />
-        <Quality />
-        <Product />
-        <Gallery />
-        <Availability />
-        <QuoteBand />
-        <Faq />
-        <Contact />
-      </main>
-      <Footer />
-    </>
+      <ScrollToTop />
+      <RouteSeo />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/guide" element={<GuideIndex />} />
+        <Route path="/guide/:slug" element={<GuidePage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
   )
 }

@@ -1,4 +1,14 @@
 User-agent: *
 Allow: /
 
+# AI crawlers — allowed, so the brand is citable in AI answers.
+User-agent: GPTBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
 Sitemap: https://www.prantorsilage.com/sitemap.xml
